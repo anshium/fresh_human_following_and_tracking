@@ -18,7 +18,7 @@ class ImageProcessor:
         # self.model.classes = [0]
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)
         self.all_objects_pub = rospy.Publisher("/yolo/all_objects_image", Image, queue_size=10)
-        self.bounding_boxes_pub = rospy.Publisher("/yolo/bounding_boxes", BoundingBox, queue_size=10)
+        self.bounding_boxes_pub = rospy.Publisher("/yolo/bounding_box", BoundingBox, queue_size=10)
     
     def callback(self, data):
         try:
