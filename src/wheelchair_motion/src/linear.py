@@ -8,7 +8,7 @@ class DistanceToTwistNode:
     def __init__(self):
         rospy.init_node('distance_to_twist_node', anonymous=True)
         
-        self.linear_speed = 0.5  # constant linear speed in m/s if distance >= 3m
+        self.linear_speed = 0.15  # constant linear speed in m/s if distance >= 3m
         self.distance_sub = rospy.Subscriber('/rgbd_depth_bb_mid_point', Float32, self.distance_callback)
         self.cmd_vel_pub = rospy.Publisher('wheelchair_diff/cmd_vel', Twist, queue_size=10)
 	
