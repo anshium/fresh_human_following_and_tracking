@@ -7,6 +7,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from ultralytics import YOLO
 
+from math import *
+
 class ImageProcessor:
     def __init__(self):
         rospy.init_node('yolo_processor', anonymous=True)
@@ -41,7 +43,7 @@ class ImageProcessor:
 
         # Publish bounding box of human
         for result in results[0].boxes:
-            bb_coords_list = (list(result.xyxy)[0]).tolist()
+            bb_coords_list = [int(floor(i)) for i in (list(result.xyxy)[0]).tolist()]
             human_detected = True
             x1, y1, x2, y2 = bb_coords_list
             # cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
