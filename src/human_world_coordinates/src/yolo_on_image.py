@@ -12,6 +12,7 @@ class ImageProcessor:
         
         self.bridge = CvBridge()
         self.model = YOLO('yolov8n.pt')
+        # self.model.classes = [0]
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)
         self.all_objects_pub = rospy.Publisher("/yolo/all_objects_image", Image, queue_size=10)
         self.single_human_pub = rospy.Publisher("/yolo/single_human_image", Image, queue_size=10)
@@ -23,7 +24,7 @@ class ImageProcessor:
             print("Error converting ROS image to OpenCV image: ", e)
             return
         
-        results = self.model.track(cv_image, persist=True)
+        results = self.model.track(cv_image, persist=True, classes=[0])
         
         # Publish image with all objects annotated
         try:
@@ -36,17 +37,21 @@ class ImageProcessor:
         annotated_frame = cv_image.copy()
         human_detected = False
         
-        for box in results[0].boxes:
-            if box.get_label() == 'person' and not human_detected:
-                x, y, w, h = map(int, box.xywh.cpu())
-                cv2.rectangle(annotated_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                human_detected = True
+        print("Results:", results[0].boxes)
+
+        # for box in results[0].boxes:
+        #     print(box)
+        #     # continue
+        #     if box.cls == 0 and not human_detected:
+        #         x, y, w, h = map(int, box.xywh.cpu())
+        #         cv2.rectangle(annotated_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        #         human_detected = True
         
-        try:
-            single_human_image = self.bridge.cv2_to_imgmsg(annotated_frame, "bgr8")
-            self.single_human_pub.publish(single_human_image)
-        except CvBridgeError as e:
-            print("Error publishing single human image: ", e)
+        # try:
+        #     single_human_image = self.bridge.cv2_to_imgmsg(annotated_frame, "bgr8")
+        #     self.single_human_pub.publish(single_human_image)
+        # except CvBridgeError as e:
+        #     print("Error publishing single human image: ", e)
 
 if __name__ == '__main__':
     ip = ImageProcessor()
