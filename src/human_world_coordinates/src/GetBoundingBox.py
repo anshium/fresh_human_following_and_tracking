@@ -6,6 +6,7 @@ import numpy as np
 from sensor_msgs.msg import Image
 from human_world_coordinates.msg import BoundingBox  # Replace 'custom_msgs' with your package name
 from cv_bridge import CvBridge, CvBridgeError
+import os 
 
 class YoloHumanDetector:
     def __init__(self):
@@ -20,7 +21,9 @@ class YoloHumanDetector:
         self.image_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.image_callback)
 
         # Load YOLO
-        self.net = cv2.dnn.readNet("weights/yolov3.weights", "weights/yolov3.cfg")
+        weights_path = os.path.abspath("./src/human_world_coordinates/weights/yolov3.weights")
+        cfg_path = os.path.abspath("./src/human_world_coordinates/weights/yolov3.cfg")
+        self.net = cv2.dnn.readNet(weights_path, cfg_path)
         self.layer_names = self.net.getLayerNames()
         self.output_layers = [self.layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
