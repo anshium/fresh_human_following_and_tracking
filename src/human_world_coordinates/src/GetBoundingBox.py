@@ -2,41 +2,45 @@ import rospy
 import cv2
 import numpy as np
 from sensor_msgs.msg import Image
-from custom_msgs.msg import BoundingBox  # Replace with your package name
-from cv_bridge import CvBridge
+from custom_msgs.msg import BoundingBox  # Replace 'custom_msgs' with your package name
+from cv_bridge import CvBridge, CvBridgeError
 
-def main():
-    # Initialize the ROS node
-    rospy.init_node('yolo_human_detector', anonymous=True)
+class YoloHumanDetector:
+    def __init__(self):
+        rospy.init_node('yolo_human_detector', anonymous=True)
 
-    # Define the publishers
-    bbox_pub = rospy.Publisher('/detected_human/bounding_box', BoundingBox, queue_size=10)
-    image_pub = rospy.Publisher('/detected_human/image', Image, queue_size=10)
-    bridge = CvBridge()
+        # Define the publishers
+        self.bbox_pub = rospy.Publisher('/detected_human/bounding_box', BoundingBox, queue_size=10)
+        self.image_pub = rospy.Publisher('/detected_human/image', Image, queue_size=10)
+        self.bridge = CvBridge()
 
-    # Load YOLO
-    net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-    layer_names = net.getLayerNames()
-    output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+        # Subscribe to the image topic
+        self.image_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.image_callback)
 
-    # Load the COCO class labels
-    with open("coco.names", "r") as f:
-        classes = [line.strip() for line in f.readlines()]
+        # Load YOLO
+        self.net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
+        self.layer_names = self.net.getLayerNames()
+        self.output_layers = [self.layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
-    # Initialize video capture (adjust the source as needed, e.g., 0 for webcam or a file path for video)
-    cap = cv2.VideoCapture(0)
+        # Load the COCO class labels
+        with open("coco.names", "r") as f:
+            self.classes = [line.strip() for line in f.readlines()]
 
-    while not rospy.is_shutdown():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    def image_callback(self, data):
+        try:
+            # Convert ROS Image message to OpenCV image
+            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            rospy.logerr(f"Error converting image: {e}")
+            return
 
-        height, width, channels = frame.shape
+        # Process the image with YOLO
+        height, width, channels = cv_image.shape
 
         # Prepare the frame for YOLO
-        blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-        net.setInput(blob)
-        outs = net.forward(output_layers)
+        blob = cv2.dnn.blobFromImage(cv_image, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+        self.net.setInput(blob)
+        outs = self.net.forward(self.output_layers)
 
         # Initialize lists for detected bounding boxes, confidences, and class IDs
         boxes = []
@@ -49,7 +53,7 @@ def main():
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if classes[class_id] == "person" and confidence > 0.5:
+                if self.classes[class_id] == "person" and confidence > 0.5:
                     # Object detected
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
@@ -68,32 +72,34 @@ def main():
             # Pick the first detected human
             i = indexes[0]
             x, y, w, h = boxes[i]
-            label = str(classes[class_ids[i]])
+            label = str(self.classes[class_ids[i]])
             confidence = confidences[i]
 
             # Draw bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label} {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(cv_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(cv_image, f"{label} {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             # Publish bounding box
             bbox_msg = BoundingBox(x=x, y=y, width=w, height=h)
-            bbox_pub.publish(bbox_msg)
+            self.bbox_pub.publish(bbox_msg)
 
             # Publish image with bounding box
-            image_msg = bridge.cv2_to_imgmsg(frame, "bgr8")
-            image_pub.publish(image_msg)
+            try:
+                image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
+                self.image_pub.publish(image_msg)
+            except CvBridgeError as e:
+                rospy.logerr(f"Error converting image: {e}")
 
-        # Display the resulting frame
-        cv2.imshow("YOLO Human Detector", frame)
+        # Display the resulting frame (optional)
+        cv2.imshow("YOLO Human Detector", cv_image)
+        cv2.waitKey(1)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
+    def run(self):
+        rospy.spin()
 
 if __name__ == "__main__":
     try:
-        main()
+        detector = YoloHumanDetector()
+        detector.run()
     except rospy.ROSInterruptException:
         pass
