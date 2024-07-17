@@ -20,7 +20,7 @@ class YoloHumanDetector:
         self.image_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.image_callback)
 
         # Load YOLO
-        self.net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
+        self.net = cv2.dnn.readNet("weights/yolov3.weights", "weights/yolov3.cfg")
         self.layer_names = self.net.getLayerNames()
         self.output_layers = [self.layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
