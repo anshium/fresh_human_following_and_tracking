@@ -2,9 +2,9 @@
 
 import rospy
 from geometry_msgs.msg import Twist
-from human_world_coordinates.msg import BoundingBox  # Adjust your_package.msg based on your message definition
+from human_world_coordinates.msg import BoundingBox 
 
-# Global variables for image dimensions (example)
+# Global variables for image dimensions
 image_width = 1280
 image_height = 720
 
@@ -30,9 +30,8 @@ def bounding_box_callback(msg):
     # Publish Twist message
     twist_msg = Twist()
     
-    # Adjust linear and angular velocities based on distance
-    twist_msg.linear.x = 0.0  # Example linear velocity
-    twist_msg.angular.z = -0.001 * (bbox_center_x - image_midpoint_x)  # Example angular velocity
+    twist_msg.linear.x = 0.0 
+    twist_msg.angular.z = -0.001 * (bbox_center_x - image_midpoint_x) 
     
     cmd_vel_pub.publish(twist_msg)
 

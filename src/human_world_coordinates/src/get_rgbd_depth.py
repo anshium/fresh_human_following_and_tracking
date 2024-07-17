@@ -8,6 +8,11 @@ import numpy as np
 
 from human_world_coordinates.msg import BoundingBox
 
+from math import *
+
+HEIGHT = 720
+WIDTH = 1280
+
 class DepthDistanceNode:
     def __init__(self):
         rospy.init_node('rgbd_depth_distance_node', anonymous=True)
@@ -36,9 +41,13 @@ class DepthDistanceNode:
         y_center = (self.bounding_box.y1 + self.bounding_box.y2) // 2
         
         # Ensure the coordinates are within the image boundaries
-        height, width = depth_image.shape
-        if 0 <= x_center < width and 0 <= y_center < height:
-            distance = depth_image[y_center, x_center]
+        depth_height, depth_width = depth_image.shape
+
+        x_center_depth = x_center * depth_width / WIDTH
+        y_center_depth = y_center * depth_height / HEIGHT
+
+        if 0 <= x_center_depth < depth_width and 0 <= y_center_depth < depth_height:
+            distance = depth_image[int(floor(y_center_depth)), int(floor(x_center_depth))]
             self.distance_pub.publish(distance)
         else:
             rospy.logwarn("Bounding box center is out of depth image bounds.")
