@@ -13,7 +13,7 @@ class ImageProcessor:
     def __init__(self):
         rospy.init_node('yolo_processor', anonymous=True)
         
-        self.bridge = CvBridge()
+        self.bridge = CvBribounding_boxesdge()
         self.model = YOLO('yolov8n.pt')
         # self.model.classes = [0]
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)

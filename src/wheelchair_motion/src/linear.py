@@ -16,7 +16,7 @@ class DistanceToTwistNode:
         distance = msg.data
         twist_msg = Twist()
         
-        if distance >= 3.0:
+        if distance >= 3000:
             twist_msg.linear.x = self.linear_speed
         else:
             twist_msg.linear.x = 0.0

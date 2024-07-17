@@ -43,7 +43,7 @@ def main():
     cmd_vel_pub = rospy.Publisher('wheelchair_diff/cmd_vel', Twist, queue_size=10)
 
     # Subscribe to BoundingBox topic
-    rospy.Subscriber('/yolo/bounding_boxes', BoundingBox, bounding_box_callback)
+    rospy.Subscriber('/yolo/bounding_box', BoundingBox, bounding_box_callback)
     
     
     rospy.spin()
