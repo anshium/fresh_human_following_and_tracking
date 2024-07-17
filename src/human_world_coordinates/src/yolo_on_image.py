@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import Image
+from human_world_coordinates.msg import BoundingBox
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from ultralytics import YOLO
@@ -15,7 +16,7 @@ class ImageProcessor:
         # self.model.classes = [0]
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.callback)
         self.all_objects_pub = rospy.Publisher("/yolo/all_objects_image", Image, queue_size=10)
-        self.single_human_pub = rospy.Publisher("/yolo/single_human_image", Image, queue_size=10)
+        self.bounding_boxes_pub = rospy.Publisher("/yolo/bounding_boxes", BoundingBox, queue_size=10)
     
     def callback(self, data):
         try:
@@ -36,22 +37,22 @@ class ImageProcessor:
         # Publish image with single human annotated
         annotated_frame = cv_image.copy()
         human_detected = False
-        
-        print("Results:", results[0].boxes)
 
-        # for box in results[0].boxes:
-        #     print(box)
-        #     # continue
-        #     if box.cls == 0 and not human_detected:
-        #         x, y, w, h = map(int, box.xywh.cpu())
-        #         cv2.rectangle(annotated_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        #         human_detected = True
+
+        # Publish bounding box of human
+        for result in results[0].boxes:
+            bb_coords_list = (list(result.xyxy)[0]).tolist()
+            human_detected = True
+            x1, y1, x2, y2 = bb_coords_list
+            # cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            bounding_box = BoundingBox()
+            bounding_box.x1 = x1
+            bounding_box.y1 = y1
+            bounding_box.x2 = x2
+            bounding_box.y2 = y2
+            self.bounding_boxes_pub.publish(bounding_box)
+        pass
         
-        # try:
-        #     single_human_image = self.bridge.cv2_to_imgmsg(annotated_frame, "bgr8")
-        #     self.single_human_pub.publish(single_human_image)
-        # except CvBridgeError as e:
-        #     print("Error publishing single human image: ", e)
 
 if __name__ == '__main__':
     ip = ImageProcessor()
