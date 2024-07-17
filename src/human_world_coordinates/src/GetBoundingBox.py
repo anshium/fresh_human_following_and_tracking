@@ -4,7 +4,7 @@ import rospy
 import cv2
 import numpy as np
 from sensor_msgs.msg import Image
-from custom_msgs.msg import BoundingBox  # Replace 'custom_msgs' with your package name
+from human_world_coordinates.msg import BoundingBox  # Replace 'custom_msgs' with your package name
 from cv_bridge import CvBridge, CvBridgeError
 
 class YoloHumanDetector:
