@@ -41,12 +41,12 @@ class ImageProcessor:
         human_detected = False
 
         for result in results:
-            id_ = result.obb.id
+            id_ = result[0].boxes.id
             if self.tracked_person_id is None:
                 self.tracked_person_id = id_
 
             if id_ == self.tracked_person_id:
-                bb_coords_list = [int(floor(i)) for i in (result.obb.xyxy).tolist()]
+                bb_coords_list = [int(floor(i)) for i in (list(result[0].boxes.xyxy)[0]).tolist()]
                 human_detected = True
                 x1, y1, x2, y2 = bb_coords_list
                 bounding_box = BoundingBox()
