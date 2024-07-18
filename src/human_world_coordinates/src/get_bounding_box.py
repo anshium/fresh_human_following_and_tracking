@@ -52,6 +52,7 @@ class ImageProcessor:
             bounding_box.y1 = y1
             bounding_box.x2 = x2
             bounding_box.y2 = y2
+            bounding_box.header.stamp = rospy.Time.now()
             self.bounding_boxes_pub.publish(bounding_box)
         pass
         

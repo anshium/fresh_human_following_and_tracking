@@ -6,7 +6,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 
-from human_world_coordinates.msg import BoundingBox
+from human_world_coordinates.msg import BoundingBox, Distance
 
 from math import *
 
@@ -22,7 +22,7 @@ class DepthDistanceNode:
         
         self.depth_sub = rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_callback)
         self.bbox_sub = rospy.Subscriber('/yolo/bounding_box', BoundingBox, self.bbox_callback)
-        self.distance_pub = rospy.Publisher('/rgbd_depth_bb_mid_point', Float32, queue_size=10)
+        self.distance_pub = rospy.Publisher('/rgbd_depth_bb_mid_point', Distance, queue_size=10)
     
     def bbox_callback(self, msg):
         self.bounding_box = msg
@@ -31,6 +31,8 @@ class DepthDistanceNode:
         if self.bounding_box is None:
             return
         
+        depth = Distance()
+
         try:
             depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         except CvBridgeError as e:
@@ -46,9 +48,12 @@ class DepthDistanceNode:
         x_center_depth = x_center * depth_width / WIDTH
         y_center_depth = y_center * depth_height / HEIGHT
 
+
         if 0 <= x_center_depth < depth_width and 0 <= y_center_depth < depth_height:
-            distance = depth_image[int(floor(y_center_depth)), int(floor(x_center_depth))]
-            self.distance_pub.publish(distance)
+            depth.distance = depth_image[int(floor(y_center_depth)), int(floor(x_center_depth))]
+            depth.header.stamp = rospy.Time.now()
+
+            self.distance_pub.publish(depth)
         else:
             rospy.logwarn("Bounding box center is out of depth image bounds.")
     
